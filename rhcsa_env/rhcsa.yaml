@@ -1,7 +1,7 @@
 heat_template_version: 2016-10-14
 
 description: >
-  This template configure a lab to train oneself with RHCE certification 
+  This template configure a lab to train oneself with RHCSA certification 
 parameters:
 
   # GENERIC
@@ -33,14 +33,6 @@ parameters:
     type: string
     label: External network
     description: External network name
-  
-  # Kerberos Specific
-  
-  KRB_flavor:
-    type: string
-    label: KRB Server Flavor
-    description: Flavor for kerberos server
-    default: m1.small
 
   # A Server Specific
   
