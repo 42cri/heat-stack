@@ -42,21 +42,13 @@ parameters:
     description: Flavor for A server
     default: m1.small
 
-  # B Server Specific
-
-  B_flavor:
-    type: string
-    label: B Server Flavor
-    description: Flavor for B server
-    default: m1.small
-
   # AWX Server Specific
 
   AWX_flavor:
     type: string
     label: Awx Flavor
     description: Flavor for AWX server
-    default: m1.medium
+    default: m1.small
   
   ssh_allowed_cidr:
     type: string
@@ -131,47 +123,6 @@ resources:
             $ROOT_PWD: {get_param: root_pwd }
             $AUTOM_PUB: {get_param: automation_public_key}
 
-# B SERVER RESOURCES
-
-  B_port:
-    type: OS::Neutron::Port
-    properties:
-      network: { get_param: tenant_network }
-      security_groups:
-        - { get_resource: tenant_security_group }
-
-  B_srv:
-    type: OS::Nova::Server
-    properties:
-      flavor: { get_param: B_flavor }
-      name: srvB
-      image: { get_param: image_name }
-      key_name: { get_param: key_name }
-      networks:
-        - port: { get_resource: B_port }
-      user_data:
-        str_replace:
-          template: |
-            #!/bin/bash
-            echo "sshd: All" >> /etc/hosts.deny
-            echo "sshd: $ALLOWED_CIDR" >> /etc/hosts.allow
-            sed -i s/"#PermitRootLogin yes"/"PermitRootLogin yes"/g /etc/ssh/sshd_config
-            sed -i s/"PasswordAuthentication no"/"PasswordAuthentication yes"/g /etc/ssh/sshd_config
-            sed -i 's/GSSAPICleanupCredentials yes/GSSAPICleanupCredentials no/g' /etc/ssh/sshd_config
-            systemctl restart sshd
-            echo $ROOT_PWD | passwd --stdin root
-            useradd -d /home/automation -s /bin/bash automation
-            mkdir /home/automation/.ssh
-            chown -R automation:automation /home/automation/
-            echo -e "automation	ALL=(ALL)	NOPASSWD: ALL" | tee -a /etc/sudoers.d/automation
-            echo -e "$AUTOM_PUB" | tee -a /home/automation/.ssh/authorized_keys
-            chmod 600 /home/automation/.ssh/authorized_keys
-            chown automation:automation /home/automation/.ssh/authorized_keys
-          params:
-            $ALLOWED_CIDR: {get_param: ssh_allowed_cidr }
-            $ROOT_PWD: {get_param: root_pwd }
-            $AUTOM_PUB: {get_param: automation_public_key}
-
 # AWX SERVER RESOURCES
 
   awx_port:
@@ -214,3 +165,7 @@ resources:
             sleep 5
             ansible-playbook -i /tmp/awx/installer/inventory /tmp/awx/installer/install.yml
             useradd -d /home/automation -s /bin/bash automation
+          params:
+            $ALLOWED_CIDR: {get_param: ssh_allowed_cidr }
+            $ROOT_PWD: {get_param: root_pwd }
+            $AUTOM_PUB: {get_param: automation_public_key}
